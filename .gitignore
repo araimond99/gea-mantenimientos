@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+.vercel/
+.sites-runtime/
+test-results/
+playwright-report/
+*.tsbuildinfo
+*.log
