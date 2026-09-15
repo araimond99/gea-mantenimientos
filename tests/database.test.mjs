@@ -19,6 +19,7 @@ before(async () => {
   await db.exec(await readFile(new URL('../supabase/migrations/202609140001_campaign.sql', import.meta.url), 'utf8'));
   await db.exec(await readFile(new URL('../supabase/migrations/202609140002_simple_access.sql', import.meta.url), 'utf8'));
   await db.exec(await readFile(new URL('../supabase/migrations/202609150003_public_names_and_cancel.sql', import.meta.url), 'utf8'));
+  await db.exec(await readFile(new URL('../supabase/migrations/202609150004_colombia_last_week_tuesday.sql', import.meta.url), 'utf8'));
   for (let n = 1; n <= 50; n++) await asUser(n, 'select public.maintenance_enter($1,$2)', ['Persona de prueba', `person${n}@gea.com`]);
 });
 beforeEach(async () => { await db.exec('delete from public.maintenance_reservations; delete from public.maintenance_admins'); });
@@ -40,7 +41,7 @@ test('40 slots, exact dates, local times and 15-minute duration', async () => {
     bool_and(ends_at - starts_at = interval '15 minutes') as duration
     from public.maintenance_slots group by country order by country`);
   assert.deepEqual(rows.map(r => [r.country, r.count]), [['CO', 20], ['MX', 20]]);
-  assert.deepEqual(rows[0].dates, ['2026-09-21', '2026-09-23', '2026-09-28', '2026-09-30']);
+  assert.deepEqual(rows[0].dates, ['2026-09-21', '2026-09-23', '2026-09-28', '2026-09-29']);
   assert.deepEqual(rows[1].dates, ['2026-09-21', '2026-09-22', '2026-09-28', '2026-09-29']);
   for (const row of rows) { assert.ok(row.duration); assert.deepEqual(row.times, ['09:00:00','09:30:00','10:00:00','10:30:00','11:00:00']); }
 });
@@ -135,5 +136,5 @@ test('past appointments cannot be reserved and are shown as unavailable', async 
     await assert.rejects(reserve(1, 40), /PAST_SLOT/);
     const { rows } = await asUser(null, 'select * from public.maintenance_availability() where id = 40', [], 'anon');
     assert.equal(rows[0].available, false);
-  } finally { await db.exec("update public.maintenance_slots set starts_at = '2026-09-30 11:00:00-05', ends_at = '2026-09-30 11:15:00-05' where id = 40"); }
+  } finally { await db.exec("update public.maintenance_slots set starts_at = '2026-09-29 11:00:00-05', ends_at = '2026-09-29 11:15:00-05' where id = 40"); }
 });

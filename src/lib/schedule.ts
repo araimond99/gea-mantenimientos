@@ -3,7 +3,7 @@ export type Slot = { id: number; country: Country; starts_at: string; ends_at: s
 export type Reservation = { id: string; slot_id: number; full_name: string; email: string; created_at: string; country: Country; starts_at: string; ends_at: string };
 export const countries = {
   MX: { name: 'México', days: 'Lunes y martes', zone: 'America/Mexico_City', zoneLabel: 'Ciudad de México', dates: [21, 22, 28, 29], offset: '-06:00' },
-  CO: { name: 'Colombia', days: 'Lunes y miércoles', zone: 'America/Bogota', zoneLabel: 'Bogotá', dates: [21, 23, 28, 30], offset: '-05:00' },
+  CO: { name: 'Colombia', days: '21, 23, 28 y 29 sept.', zone: 'America/Bogota', zoneLabel: 'Bogotá', dates: [21, 23, 28, 29], offset: '-05:00' },
 } as const;
 export const times = ['09:00', '09:30', '10:00', '10:30', '11:00'];
 export function initialSlots(): Slot[] {

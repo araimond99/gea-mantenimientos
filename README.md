@@ -13,7 +13,7 @@ Todos pueden ver el nombre de quien ocupó cada horario; los correos permanecen 
 ## Agenda
 20 cupos por país, cinco por fecha, mantenimiento de 15 minutos.
 México: septiembre 21, 22, 28, 29 de 2026 (America/Mexico_City).
-Colombia: septiembre 21, 23, 28, 30 (America/Bogota).
+Colombia: septiembre 21, 23, 28, 29 (America/Bogota). La semana del 28 será lunes y martes.
 Inicios por día: 09:00, 09:30, 10:00, 10:30, 11:00.
 Restricciones únicas y bloqueos transaccionales evitan duplicados. Al cancelar, el cupo vuelve a estar disponible. RLS y permisos impiden leer tablas directamente desde la API pública.
 
