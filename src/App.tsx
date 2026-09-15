@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarDays, Check, Clock3, LoaderCircle, RefreshCw, Trash2 } from 'lucide-react';
+import { CalendarDays, Check, Clock3, LoaderCircle, LogOut, RefreshCw, Trash2, UserCircle } from 'lucide-react';
 import { configured, friendlyError, supabase } from './lib/supabase';
 import { countries, dateLabel, dayKey, initialSlots, timeLabel } from './lib/schedule';
 import type { Country, Reservation, Slot } from './lib/schedule';
@@ -11,6 +11,7 @@ export default function App() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [reservation, setReservation] = useState<Reservation | null>(null);
+  const [currentProfile, setCurrentProfile] = useState<{ full_name: string; email: string } | null>(null);
   const [loading, setLoading] = useState(configured);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -26,9 +27,10 @@ export default function App() {
     if (schedule.error) setError('No pudimos cargar los horarios. Inténtalo de nuevo.');
     else setSlots(schedule.data as Slot[]);
     if (!mine.error) setReservation(mine.data?.[0] ?? null);
-    if (!access.error && access.data?.[0]) {
-      setName(access.data[0].full_name);
-      setEmail(access.data[0].email);
+    if (!access.error) {
+      const profile = access.data?.[0] ?? null;
+      setCurrentProfile(profile);
+      if (profile) { setName(profile.full_name); setEmail(profile.email); }
     }
     setLoading(false);
   }, []);
@@ -83,6 +85,24 @@ export default function App() {
     setBusy(false);
   }
 
+  async function switchAccount() {
+    if (!supabase || busy) return;
+    if (reservation && !window.confirm('Para usar otro correo se cancelará tu reserva actual y el horario volverá a estar disponible. ¿Deseas continuar?')) return;
+    setBusy(true); setError(''); setMessage('');
+    if (reservation) {
+      const cancelled = await supabase.rpc('maintenance_cancel');
+      if (cancelled.error) { setError(friendlyError(cancelled.error)); setBusy(false); return; }
+    }
+    const signedOut = await supabase.auth.signOut();
+    if (signedOut.error) setError(friendlyError(signedOut.error));
+    else {
+      setCurrentProfile(null); setReservation(null); setName(''); setEmail(''); setSelectedId(null);
+      setMessage('Sesión cerrada. Ya puedes usar otro correo.');
+    }
+    await refresh();
+    setBusy(false);
+  }
+
   return <div className="app-shell">
     <header className="topbar">
       <img src="/gea-logo.png" alt="GEA" className="gea-logo" />
@@ -102,6 +122,12 @@ export default function App() {
       {message && <div className="message success" role="status"><Check size={18} />{message}</div>}
       {error && <div className="message error" role="alert">{error}</div>}
 
+      {currentProfile && <section className="session-bar" aria-label="Sesión actual">
+        <UserCircle size={26} />
+        <div><span>Sesión actual</span><strong>{currentProfile.full_name}</strong><small>{currentProfile.email}</small></div>
+        <button onClick={switchAccount} disabled={busy}><LogOut size={17} /> Usar otro correo</button>
+      </section>}
+
       {reservation && <section className="my-booking">
         <div><span>Tu reserva</span><strong>{dateLabel(reservation.starts_at, reservation.country, { weekday: 'long', day: 'numeric', month: 'long' })}, {timeLabel(reservation.starts_at, reservation.country)}–{timeLabel(reservation.ends_at, reservation.country)}</strong><small>{countries[reservation.country].name} · {reservation.full_name}</small></div>
         <button className="cancel-button" onClick={cancel} disabled={busy}><Trash2 size={17} /> Cancelar reserva</button>
@@ -111,8 +137,8 @@ export default function App() {
         <aside className="booking-form">
           <div className="step-label">PASO 1 DE 2</div>
           <div className="form-heading"><CalendarDays size={24} /><div><h2>Escribe tus datos</h2><p>Después elige uno de los horarios disponibles.</p></div></div>
-          <label>Nombre completo<input autoComplete="name" value={name} onChange={event => setName(event.target.value)} placeholder="Nombre y apellido" maxLength={120} disabled={busy || Boolean(reservation)} /></label>
-          <label>Correo de GEA<input type="email" inputMode="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="nombre@gea.com" maxLength={254} disabled={busy || Boolean(reservation)} /></label>
+          <label>Nombre completo<input autoComplete="name" value={name} onChange={event => setName(event.target.value)} placeholder="Nombre y apellido" maxLength={120} disabled={busy || Boolean(reservation) || Boolean(currentProfile)} /></label>
+          <label>Correo de GEA<input type="email" inputMode="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="nombre@gea.com" maxLength={254} disabled={busy || Boolean(reservation) || Boolean(currentProfile)} /></label>
           <div className={`chosen-slot ${selected ? 'ready' : ''}`} aria-live="polite">
             <span>Horario elegido</span>
             <strong>{selected ? `${dateLabel(selected.starts_at, country, { weekday: 'long', day: 'numeric', month: 'long' })}, ${timeLabel(selected.starts_at, country)}` : 'Aún no has elegido un horario'}</strong>

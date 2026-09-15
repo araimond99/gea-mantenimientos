@@ -13,6 +13,7 @@ async function mockService(page: Page) {
     const ok = (body: unknown) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
     if (url.includes('/auth/v1/signup')) return ok({ access_token: accessToken, refresh_token: 'refresh', expires_in: 3600, token_type: 'bearer', user });
     if (url.includes('/auth/v1/user')) return route.request().headers().authorization ? ok(user) : route.fulfill({ status: 401, contentType: 'application/json', body: '{}' });
+    if (url.includes('/auth/v1/logout')) { profile = null; return ok({}); }
     if (url.endsWith('/maintenance_availability')) return ok(slots);
     if (url.endsWith('/maintenance_my_reservation')) return ok(reservation ? [reservation] : []);
     if (url.endsWith('/maintenance_access')) return ok(profile ? [profile] : []);
@@ -43,6 +44,10 @@ test('single-screen booking shows the name and supports cancellation', async ({ 
   await page.getByRole('button', { name: 'Cancelar reserva' }).click();
   await expect(page.getByText('Tu reserva fue cancelada')).toBeVisible();
   await expect(page.getByRole('button', { name: /09:00–09:15 Disponible/ }).first()).toBeEnabled();
+  await expect(page.getByLabel('Sesión actual')).toContainText('ana@gea.com');
+  await page.getByRole('button', { name: 'Usar otro correo' }).click();
+  await expect(page.getByLabel('Sesión actual')).toHaveCount(0);
+  await expect(page.getByLabel('Correo de GEA')).toHaveValue('');
 });
 
 test('only exact gea.com emails are accepted', async ({ page }) => {
