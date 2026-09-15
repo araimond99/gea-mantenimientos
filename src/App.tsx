@@ -108,8 +108,22 @@ export default function App() {
       </section>}
 
       <div className="layout">
+        <aside className="booking-form">
+          <div className="step-label">PASO 1 DE 2</div>
+          <div className="form-heading"><CalendarDays size={24} /><div><h2>Escribe tus datos</h2><p>Después elige uno de los horarios disponibles.</p></div></div>
+          <label>Nombre completo<input autoComplete="name" value={name} onChange={event => setName(event.target.value)} placeholder="Nombre y apellido" maxLength={120} disabled={busy || Boolean(reservation)} /></label>
+          <label>Correo de GEA<input type="email" inputMode="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="nombre@gea.com" maxLength={254} disabled={busy || Boolean(reservation)} /></label>
+          <div className={`chosen-slot ${selected ? 'ready' : ''}`} aria-live="polite">
+            <span>Horario elegido</span>
+            <strong>{selected ? `${dateLabel(selected.starts_at, country, { weekday: 'long', day: 'numeric', month: 'long' })}, ${timeLabel(selected.starts_at, country)}` : 'Aún no has elegido un horario'}</strong>
+          </div>
+          <button className="reserve-button" onClick={reserve} disabled={!configured || !selected || busy || Boolean(reservation)}>{busy ? <><LoaderCircle className="spin" size={20} /> Guardando…</> : selected ? 'Confirmar mi reserva' : 'Elige un horario para continuar'}</button>
+          <p className="form-note">No necesitas contraseña. Solo puedes hacer una reserva.</p>
+        </aside>
+
         <section className="schedule" aria-label={`Horarios de ${countries[country].name}`}>
-          <div className="schedule-head"><div><h2>{countries[country].name}</h2><p>Hora de {countries[country].zoneLabel}</p></div><span className="counter"><strong>{loading ? '—' : available}</strong> de 20 disponibles</span></div>
+          <div className="step-label">PASO 2 DE 2</div>
+          <div className="schedule-head"><div><h2>Elige fecha y hora</h2><p>{countries[country].name} · hora de {countries[country].zoneLabel}</p></div><span className="counter"><strong>{loading ? '—' : available}</strong> de 20 disponibles</span></div>
           {loading ? <div className="loading"><LoaderCircle className="spin" /> Cargando horarios…</div> : <div className="day-grid">
             {days.map(day => {
               const daySlots = countrySlots.filter(slot => dayKey(slot) === day);
@@ -118,7 +132,7 @@ export default function App() {
                 <div className="day-title"><span>{dateLabel(first.starts_at, country, { weekday: 'long' })}</span><strong>{dateLabel(first.starts_at, country, { day: 'numeric' })}</strong><small>septiembre</small></div>
                 <div className="slot-list">{daySlots.map(slot => <button key={slot.id} disabled={!slot.available || Boolean(reservation)} aria-pressed={selectedId === slot.id} className={`slot ${slot.available ? 'free' : 'taken'} ${selectedId === slot.id ? 'selected' : ''}`} onClick={() => setSelectedId(slot.id)}>
                   <span className="slot-time"><Clock3 size={15} />{timeLabel(slot.starts_at, country)}–{timeLabel(slot.ends_at, country)}</span>
-                  {slot.available ? <small>Disponible</small> : <strong title={slot.reserved_by ?? ''}>{slot.reserved_by ?? 'Reservado'}</strong>}
+                  {slot.available ? <small>Disponible</small> : <strong title={slot.reserved_by ?? ''}>Reservado por {slot.reserved_by ?? 'otra persona'}</strong>}
                 </button>)}</div>
               </article>;
             })}
@@ -126,14 +140,11 @@ export default function App() {
           {!loading && <button className="refresh-button" onClick={() => void refresh()}><RefreshCw size={15} /> Actualizar espacios</button>}
         </section>
 
-        <aside className="booking-form">
-          <div className="form-heading"><CalendarDays size={21} /><div><h2>Reserva este espacio</h2><p>{selected ? `${dateLabel(selected.starts_at, country, { weekday: 'long', day: 'numeric', month: 'long' })} · ${timeLabel(selected.starts_at, country)}` : 'Primero selecciona un horario disponible.'}</p></div></div>
-          <label>Nombre completo<input value={name} onChange={event => setName(event.target.value)} placeholder="Nombre y apellido" maxLength={120} disabled={busy || Boolean(reservation)} /></label>
-          <label>Correo GEA<input type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="nombre@gea.com" maxLength={254} disabled={busy || Boolean(reservation)} /></label>
-          <button className="reserve-button" onClick={reserve} disabled={!configured || !selected || busy || Boolean(reservation)}>{busy ? <><LoaderCircle className="spin" size={18} /> Guardando…</> : 'Confirmar reserva'}</button>
-          <p className="form-note">Sin contraseña ni confirmación por correo. Una reserva por persona.</p>
-        </aside>
       </div>
+      {selected && !reservation && <div className="mobile-confirm" aria-label="Horario seleccionado">
+        <div><span>Horario elegido</span><strong>{dateLabel(selected.starts_at, country, { weekday: 'short', day: 'numeric' })} · {timeLabel(selected.starts_at, country)}</strong></div>
+        <button onClick={reserve} disabled={busy || !configured}>{busy ? 'Guardando…' : 'Confirmar'}</button>
+      </div>}
     </main>
     <footer>GEA · Soporte TI México y Colombia</footer>
   </div>;

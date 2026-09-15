@@ -35,10 +35,10 @@ test('single-screen booking shows the name and supports cancellation', async ({ 
   await expect(page.getByText('Ya tengo cuenta')).toHaveCount(0);
   await page.getByRole('button', { name: /09:00–09:15 Disponible/ }).first().click();
   await page.getByLabel('Nombre completo').fill('Ana López');
-  await page.getByLabel('Correo GEA').fill('ana@gea.com');
-  await page.getByRole('button', { name: 'Confirmar reserva' }).click();
+  await page.getByLabel('Correo de GEA').fill('ana@gea.com');
+  await page.getByRole('button', { name: 'Confirmar mi reserva' }).click();
   await expect(page.getByText('Listo, tu horario quedó reservado.')).toBeVisible();
-  await expect(page.getByRole('button', { name: /09:00–09:15 Ana López/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /09:00–09:15 Reservado por Ana López/ })).toBeVisible();
   page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Cancelar reserva' }).click();
   await expect(page.getByText('Tu reserva fue cancelada')).toBeVisible();
@@ -49,8 +49,8 @@ test('only exact gea.com emails are accepted', async ({ page }) => {
   await mockService(page); await page.goto('/');
   await page.getByRole('button', { name: /09:00–09:15 Disponible/ }).first().click();
   await page.getByLabel('Nombre completo').fill('Ana López');
-  await page.getByLabel('Correo GEA').fill('ana@gmail.com');
-  await page.getByRole('button', { name: 'Confirmar reserva' }).click();
+  await page.getByLabel('Correo de GEA').fill('ana@gmail.com');
+  await page.getByRole('button', { name: 'Confirmar mi reserva' }).click();
   await expect(page.getByRole('alert')).toContainText('@gea.com');
 });
 
@@ -58,5 +58,16 @@ test('mobile schedule has no horizontal overflow', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 }); await mockService(page); await page.goto('/');
   await page.getByRole('button', { name: /Colombia/ }).click();
   await expect(page.getByText('Hora de Bogotá')).toBeVisible();
+  const formTop = await page.locator('.booking-form').evaluate(element => element.getBoundingClientRect().top);
+  const scheduleTop = await page.locator('.schedule').evaluate(element => element.getBoundingClientRect().top);
+  expect(formTop).toBeLessThan(scheduleTop);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('large text remains usable on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 }); await mockService(page); await page.goto('/');
+  await page.addStyleTag({ content: ':root { font-size: 24px !important; }' });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(page.getByLabel('Nombre completo')).toBeVisible();
+  await expect(page.getByRole('button', { name: /México/ })).toBeVisible();
 });
