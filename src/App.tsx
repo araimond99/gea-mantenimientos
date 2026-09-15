@@ -123,7 +123,7 @@ export default function App() {
 
   return <div className="app-shell">
     <header className="topbar">
-      <img src="/gea-logo.png" alt="GEA" className="gea-logo" />
+      <img src={`${import.meta.env.BASE_URL}gea-logo.png`} alt="GEA" className="gea-logo" />
       <span>Mantenimiento preventivo · Septiembre 2026</span>
     </header>
 
