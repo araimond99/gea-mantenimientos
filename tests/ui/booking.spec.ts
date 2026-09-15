@@ -63,6 +63,9 @@ test('mobile schedule has no horizontal overflow', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 }); await mockService(page); await page.goto('/');
   await page.getByRole('button', { name: /Colombia/ }).click();
   await expect(page.getByText('Hora de Bogotá')).toBeVisible();
+  const countryTop = await page.getByRole('group', { name: 'Elige el país del mantenimiento' }).evaluate(element => element.getBoundingClientRect().top);
+  const nameTop = await page.getByLabel('Nombre completo').evaluate(element => element.getBoundingClientRect().top);
+  expect(countryTop).toBeLessThan(nameTop);
   const formTop = await page.locator('.booking-form').evaluate(element => element.getBoundingClientRect().top);
   const scheduleTop = await page.locator('.schedule').evaluate(element => element.getBoundingClientRect().top);
   expect(formTop).toBeLessThan(scheduleTop);

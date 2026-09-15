@@ -112,11 +112,6 @@ export default function App() {
     <main className="main">
       <section className="intro">
         <div><p className="kicker">RESERVA EN 1 MINUTO</p><h1>Elige tu horario</h1><p>Cada mantenimiento dura 15 minutos. Todos pueden ver qué espacios siguen libres y quién reservó los demás.</p></div>
-        <div className="country-tabs" role="group" aria-label="País">
-          {(['MX', 'CO'] as Country[]).map(code => <button key={code} className={country === code ? 'active' : ''} onClick={() => { setCountry(code); setSelectedId(null); setError(''); }} aria-pressed={country === code}>
-            {countries[code].name}<small>{countries[code].days}</small>
-          </button>)}
-        </div>
       </section>
 
       {message && <div className="message success" role="status"><Check size={18} />{message}</div>}
@@ -135,6 +130,11 @@ export default function App() {
 
       <div className="layout">
         <aside className="booking-form">
+          <div className="country-tabs" role="group" aria-label="Elige el país del mantenimiento">
+            {(['MX', 'CO'] as Country[]).map(code => <button key={code} className={country === code ? 'active' : ''} onClick={() => { setCountry(code); setSelectedId(null); setError(''); }} aria-pressed={country === code}>
+              <span className="country-name"><span className={`mini-flag flag-${code.toLowerCase()}`} aria-hidden="true" />{countries[code].name}</span><small>{countries[code].days}</small>
+            </button>)}
+          </div>
           <div className="step-label">PASO 1 DE 2</div>
           <div className="form-heading"><CalendarDays size={24} /><div><h2>Escribe tus datos</h2><p>Después elige uno de los horarios disponibles.</p></div></div>
           <label>Nombre completo<input autoComplete="name" value={name} onChange={event => setName(event.target.value)} placeholder="Nombre y apellido" maxLength={120} disabled={busy || Boolean(reservation) || Boolean(currentProfile)} /></label>
