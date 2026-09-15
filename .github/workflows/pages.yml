@@ -31,10 +31,6 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Construir aplicación
         run: npm run build
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-          VITE_REGISTRATION_ENABLED: 'true'
       - name: Empaquetar sitio
         uses: actions/upload-pages-artifact@v4
         with:
