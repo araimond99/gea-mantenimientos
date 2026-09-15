@@ -64,11 +64,13 @@ test('mobile schedule has no horizontal overflow', async ({ page }) => {
   await page.getByRole('button', { name: /Colombia/ }).click();
   await expect(page.getByText('Hora de Bogotá')).toBeVisible();
   const countryTop = await page.getByRole('group', { name: 'Elige el país del mantenimiento' }).evaluate(element => element.getBoundingClientRect().top);
-  const nameTop = await page.getByLabel('Nombre completo').evaluate(element => element.getBoundingClientRect().top);
-  expect(countryTop).toBeLessThan(nameTop);
-  const formTop = await page.locator('.booking-form').evaluate(element => element.getBoundingClientRect().top);
   const scheduleTop = await page.locator('.schedule').evaluate(element => element.getBoundingClientRect().top);
-  expect(formTop).toBeLessThan(scheduleTop);
+  expect(countryTop).toBeLessThan(scheduleTop);
+  await expect(page.getByLabel('Nombre completo')).not.toBeVisible();
+  await page.getByRole('button', { name: /09:00–09:15 Disponible/ }).first().click();
+  await expect(page.getByLabel('Nombre completo')).toBeVisible();
+  await expect.poll(() => page.locator('.booking-form').evaluate(element => element.getBoundingClientRect().top)).toBeLessThan(500);
+  await expect(page.getByRole('button', { name: 'Continuar' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
@@ -76,6 +78,6 @@ test('large text remains usable on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 }); await mockService(page); await page.goto('/');
   await page.addStyleTag({ content: ':root { font-size: 24px !important; }' });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await expect(page.getByLabel('Nombre completo')).toBeVisible();
   await expect(page.getByRole('button', { name: /México/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Elige fecha y hora' })).toBeVisible();
 });

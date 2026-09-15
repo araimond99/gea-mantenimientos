@@ -46,6 +46,24 @@ export default function App() {
   const selected = slots.find(slot => slot.id === selectedId && slot.available);
   const available = countrySlots.filter(slot => slot.available).length;
 
+  function chooseCountry(code: Country) {
+    setCountry(code);
+    setSelectedId(null);
+    setError('');
+  }
+
+  function chooseSlot(id: number) {
+    setSelectedId(id);
+    setError('');
+    if (window.matchMedia('(max-width: 650px)').matches) {
+      window.setTimeout(() => document.getElementById('booking-details')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+    }
+  }
+
+  function goToDetails() {
+    document.getElementById('booking-details')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   async function reserve() {
     if (!supabase || !selected || busy) return;
     const corporateEmail = email.trim().toLowerCase();
@@ -111,7 +129,7 @@ export default function App() {
 
     <main className="main">
       <section className="intro">
-        <div><p className="kicker">RESERVA EN 1 MINUTO</p><h1>Elige tu horario</h1><p>Cada mantenimiento dura 15 minutos. Todos pueden ver qué espacios siguen libres y quién reservó los demás.</p></div>
+        <div><p className="kicker">RESERVA EN 1 MINUTO</p><h1>Elige tu horario</h1><p>Primero elige el país, la fecha y la hora. Después escribe tus datos para confirmar. Cada mantenimiento dura 15 minutos.</p></div>
       </section>
 
       {message && <div className="message success" role="status"><Check size={18} />{message}</div>}
@@ -128,27 +146,36 @@ export default function App() {
         <button className="cancel-button" onClick={cancel} disabled={busy}><Trash2 size={17} /> Cancelar reserva</button>
       </section>}
 
-      <div className="layout">
-        <aside className="booking-form">
-          <div className="country-tabs" role="group" aria-label="Elige el país del mantenimiento">
-            {(['MX', 'CO'] as Country[]).map(code => <button key={code} className={country === code ? 'active' : ''} onClick={() => { setCountry(code); setSelectedId(null); setError(''); }} aria-pressed={country === code}>
+      <div className="mobile-country-picker">
+        <p>¿Dónde será el mantenimiento?</p>
+        <div className="country-tabs" role="group" aria-label="Elige el país del mantenimiento">
+          {(['MX', 'CO'] as Country[]).map(code => <button key={code} className={country === code ? 'active' : ''} onClick={() => chooseCountry(code)} aria-pressed={country === code}>
+            <span className="country-name"><span className={`mini-flag flag-${code.toLowerCase()}`} aria-hidden="true" />{countries[code].name}</span><small>{countries[code].days}</small>
+          </button>)}
+        </div>
+      </div>
+
+      <div className={`layout ${selected ? 'has-selected-slot' : ''}`}>
+        <aside className="booking-form" id="booking-details">
+          <div className="country-tabs desktop-country-tabs" role="group" aria-label="Elige el país del mantenimiento">
+            {(['MX', 'CO'] as Country[]).map(code => <button key={code} className={country === code ? 'active' : ''} onClick={() => chooseCountry(code)} aria-pressed={country === code}>
               <span className="country-name"><span className={`mini-flag flag-${code.toLowerCase()}`} aria-hidden="true" />{countries[code].name}</span><small>{countries[code].days}</small>
             </button>)}
           </div>
-          <div className="step-label">PASO 1 DE 2</div>
-          <div className="form-heading"><CalendarDays size={24} /><div><h2>Escribe tus datos</h2><p>Después elige uno de los horarios disponibles.</p></div></div>
+          <div className="step-label">PASO 2 DE 2</div>
+          <div className="form-heading"><CalendarDays size={24} /><div><h2>Completa tus datos</h2><p>{selected ? 'Escribe tu nombre y correo para confirmar este horario.' : 'Primero selecciona un horario disponible.'}</p></div></div>
           <label>Nombre completo<input autoComplete="name" value={name} onChange={event => setName(event.target.value)} placeholder="Nombre y apellido" maxLength={120} disabled={busy || Boolean(reservation) || Boolean(currentProfile)} /></label>
           <label>Correo de GEA<input type="email" inputMode="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="nombre@gea.com" maxLength={254} disabled={busy || Boolean(reservation) || Boolean(currentProfile)} /></label>
           <div className={`chosen-slot ${selected ? 'ready' : ''}`} aria-live="polite">
             <span>Horario elegido</span>
-            <strong>{selected ? `${dateLabel(selected.starts_at, country, { weekday: 'long', day: 'numeric', month: 'long' })}, ${timeLabel(selected.starts_at, country)}` : 'Aún no has elegido un horario'}</strong>
+            <strong>{selected ? `${dateLabel(selected.starts_at, country, { weekday: 'long', day: 'numeric', month: 'long' })}, ${timeLabel(selected.starts_at, country)}` : 'Selecciona un horario en el calendario'}</strong>
           </div>
-          <button className="reserve-button" onClick={reserve} disabled={!configured || !selected || busy || Boolean(reservation)}>{busy ? <><LoaderCircle className="spin" size={20} /> Guardando…</> : selected ? 'Confirmar mi reserva' : 'Elige un horario para continuar'}</button>
+          <button className="reserve-button" onClick={reserve} disabled={!configured || !selected || busy || Boolean(reservation)}>{busy ? <><LoaderCircle className="spin" size={20} /> Guardando…</> : selected ? 'Confirmar mi reserva' : 'Primero elige un horario'}</button>
           <p className="form-note">No necesitas contraseña. Solo puedes hacer una reserva.</p>
         </aside>
 
         <section className="schedule" aria-label={`Horarios de ${countries[country].name}`}>
-          <div className="step-label">PASO 2 DE 2</div>
+          <div className="step-label">PASO 1 DE 2</div>
           <div className="schedule-head"><div><h2>Elige fecha y hora</h2><p>{countries[country].name} · hora de {countries[country].zoneLabel}</p></div><span className="counter"><strong>{loading ? '—' : available}</strong> de 20 disponibles</span></div>
           {loading ? <div className="loading"><LoaderCircle className="spin" /> Cargando horarios…</div> : <div className="day-grid">
             {days.map(day => {
@@ -156,7 +183,7 @@ export default function App() {
               const first = daySlots[0];
               return <article className="day-column" key={day}>
                 <div className="day-title"><span>{dateLabel(first.starts_at, country, { weekday: 'long' })}</span><strong>{dateLabel(first.starts_at, country, { day: 'numeric' })}</strong><small>septiembre</small></div>
-                <div className="slot-list">{daySlots.map(slot => <button key={slot.id} disabled={!slot.available || Boolean(reservation)} aria-pressed={selectedId === slot.id} className={`slot ${slot.available ? 'free' : 'taken'} ${selectedId === slot.id ? 'selected' : ''}`} onClick={() => setSelectedId(slot.id)}>
+                <div className="slot-list">{daySlots.map(slot => <button key={slot.id} disabled={!slot.available || Boolean(reservation)} aria-pressed={selectedId === slot.id} className={`slot ${slot.available ? 'free' : 'taken'} ${selectedId === slot.id ? 'selected' : ''}`} onClick={() => chooseSlot(slot.id)}>
                   <span className="slot-time"><Clock3 size={15} />{timeLabel(slot.starts_at, country)}–{timeLabel(slot.ends_at, country)}</span>
                   {slot.available ? <small>Disponible</small> : <strong title={slot.reserved_by ?? ''}>Reservado por {slot.reserved_by ?? 'otra persona'}</strong>}
                 </button>)}</div>
@@ -169,7 +196,7 @@ export default function App() {
       </div>
       {selected && !reservation && <div className="mobile-confirm" aria-label="Horario seleccionado">
         <div><span>Horario elegido</span><strong>{dateLabel(selected.starts_at, country, { weekday: 'short', day: 'numeric' })} · {timeLabel(selected.starts_at, country)}</strong></div>
-        <button onClick={reserve} disabled={busy || !configured}>{busy ? 'Guardando…' : 'Confirmar'}</button>
+        <button onClick={goToDetails}>Continuar</button>
       </div>}
     </main>
     <footer>GEA · Soporte TI México y Colombia</footer>
