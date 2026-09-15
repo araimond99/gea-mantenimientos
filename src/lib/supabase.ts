@@ -2,10 +2,14 @@ import { createClient } from '@supabase/supabase-js';
 const url = import.meta.env.VITE_SUPABASE_URL?.trim();
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
 export const configured = Boolean(url && key);
+export const registrationOpen = configured && import.meta.env.VITE_REGISTRATION_ENABLED !== 'false';
 export const supabase = configured ? createClient(url!, key!) : null;
 
 export function friendlyError(error: unknown) {
   const message = error instanceof Error ? error.message : String((error as { message?: string })?.message ?? error);
+  if (message.includes('INVALID_DOMAIN')) return 'Usa un correo que termine exactamente en @gea.com.';
+  if (message.includes('EMAIL_ALREADY_BOOKED')) return 'Ese correo ya tiene una reserva. Consúltala en el navegador donde la hiciste o contacta a Soporte TI.';
+  if (message.includes('IDENTITY_LOCKED')) return 'Cierra la sesión antes de entrar con otro correo.';
   if (message.includes('SLOT_TAKEN')) return 'Alguien acaba de reservar este horario. Elige otro disponible.';
   if (message.includes('ALREADY_BOOKED')) return 'Ya tienes una reserva para esta campaña. Puedes verla en Mi reserva.';
   if (message.includes('PAST_SLOT')) return 'Este horario ya pasó. Elige una fecha disponible.';

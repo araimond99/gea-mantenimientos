@@ -1,5 +1,5 @@
 export type Country = 'MX' | 'CO';
-export type Slot = { id: number; country: Country; starts_at: string; ends_at: string; available: boolean };
+export type Slot = { id: number; country: Country; starts_at: string; ends_at: string; available: boolean; reserved_by?: string | null };
 export type Reservation = { id: string; slot_id: number; full_name: string; email: string; created_at: string; country: Country; starts_at: string; ends_at: string };
 export const countries = {
   MX: { name: 'México', days: 'Lunes y martes', zone: 'America/Mexico_City', zoneLabel: 'Ciudad de México', dates: [21, 22, 28, 29], offset: '-06:00' },
